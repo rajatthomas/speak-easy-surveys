@@ -262,12 +262,18 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
     addMessage(text, 'user');
   }, [addMessage]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount only - empty dependency array to prevent immediate disconnect
   useEffect(() => {
     return () => {
-      disconnect();
+      // Access refs directly to avoid stale closure issues
+      streamRef.current?.getTracks().forEach(track => track.stop());
+      dcRef.current?.close();
+      pcRef.current?.close();
+      if (audioElRef.current) {
+        audioElRef.current.srcObject = null;
+      }
     };
-  }, [disconnect]);
+  }, []);
 
   return {
     messages,
