@@ -7,137 +7,68 @@ import { TranscriptBubble } from "@/components/TranscriptBubble";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
 import { QuickActions } from "@/components/QuickActions";
 import { PrivacyBadge } from "@/components/PrivacyBadge";
-import { ArrowLeft, MoreVertical } from "lucide-react";
-
-interface Message {
-  id: string;
-  text: string;
-  sender: "user" | "ai";
-  timestamp: Date;
-}
-
-const INITIAL_AI_MESSAGE = `Hi! I'm your AI conversation partner for this feedback session. Before we start, a few quick things: You can speak naturally like we're having coffee. If you need a break, just say "pause" and I'll remember where we left off. Your responses are private and anonymous. Sound good?`;
-
-const SAMPLE_RESPONSES = [
-  "That's interesting — tell me more about that experience.",
-  "I hear you. What made you feel that way?",
-  "Can you give me an example of when that happened?",
-  "That makes sense. How did that affect your day-to-day work?",
-  "I appreciate you sharing that. What would you change if you could?",
-];
+import { ArrowLeft, MoreVertical, Loader2 } from "lucide-react";
+import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 
 export default function ConversationPage() {
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const [isListening, setIsListening] = useState(false);
-  const [aiState, setAiState] = useState<"idle" | "listening" | "speaking" | "thinking">("idle");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: INITIAL_AI_MESSAGE,
-      sender: "ai",
-      timestamp: new Date(),
-    },
-  ]);
-  const [currentTranscript, setCurrentTranscript] = useState("");
   const [progress, setProgress] = useState(15);
+  const [isStarting, setIsStarting] = useState(false);
+
+  const {
+    messages,
+    isConnected,
+    aiState,
+    connect,
+    disconnect,
+  } = useRealtimeChat();
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Simulate AI speaking on initial load
+  // Update progress based on messages
   useEffect(() => {
-    setAiState("speaking");
-    const timer = setTimeout(() => setAiState("idle"), 4000);
-    return () => clearTimeout(timer);
-  }, []);
+    const messageCount = messages.filter(m => m.sender === 'user').length;
+    setProgress(Math.min(15 + messageCount * 10, 95));
+  }, [messages]);
 
-  const handleStartListening = () => {
-    setIsListening(true);
-    setAiState("listening");
-    setCurrentTranscript("");
-    
-    // Simulate speech recognition
-    const phrases = [
-      "Well, ",
-      "Well, I think ",
-      "Well, I think overall ",
-      "Well, I think overall things are ",
-      "Well, I think overall things are going okay. ",
-      "Well, I think overall things are going okay. Some days ",
-      "Well, I think overall things are going okay. Some days are better ",
-      "Well, I think overall things are going okay. Some days are better than others, ",
-      "Well, I think overall things are going okay. Some days are better than others, you know?",
-    ];
-    
-    let index = 0;
-    const interval = setInterval(() => {
-      if (index < phrases.length) {
-        setCurrentTranscript(phrases[index]);
-        index++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 300);
-
-    return () => clearInterval(interval);
-  };
-
-  const handleStopListening = () => {
-    setIsListening(false);
-    
-    if (currentTranscript) {
-      // Add user message
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        text: currentTranscript,
-        sender: "user",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, userMessage]);
-      setCurrentTranscript("");
-      
-      // AI thinking
-      setAiState("thinking");
-      
-      // AI responds after a delay
-      setTimeout(() => {
-        setAiState("speaking");
-        const randomResponse = SAMPLE_RESPONSES[Math.floor(Math.random() * SAMPLE_RESPONSES.length)];
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: randomResponse,
-          sender: "ai",
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-        setProgress((prev) => Math.min(prev + 8, 95));
-        
-        setTimeout(() => setAiState("idle"), 2000);
-      }, 1500);
-    } else {
-      setAiState("idle");
+  const handleStartConversation = async () => {
+    setIsStarting(true);
+    try {
+      await connect();
+    } finally {
+      setIsStarting(false);
     }
   };
 
+  const handleStopConversation = () => {
+    disconnect();
+  };
+
   const handlePause = () => {
+    disconnect();
     navigate("/paused");
   };
 
   const handleIssue = () => {
-    // Show issue modal (simplified for MVP)
     alert("Options:\n• I can't hear you\n• You're not understanding me\n• Privacy concern\n\nPlease try again or contact support.");
   };
+
+  // Map aiState to avatar state
+  const avatarState = aiState === 'connecting' ? 'thinking' : aiState;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b border-border bg-card">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => {
+            disconnect();
+            navigate("/");
+          }}
           className="p-2 rounded-full hover:bg-muted transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-muted-foreground" />
@@ -159,21 +90,32 @@ export default function ConversationPage() {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* AI Section */}
         <div className="flex flex-col items-center py-6 bg-gradient-to-b from-secondary/30 to-transparent">
-          <AIAvatar state={aiState} size="lg" />
+          <AIAvatar state={avatarState} size="lg" />
           
           {/* AI Status */}
           <div className="mt-4 h-8 flex items-center justify-center">
-            {aiState === "speaking" && (
+            {aiState === 'connecting' && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Connecting...</span>
+              </div>
+            )}
+            {aiState === 'speaking' && (
               <AudioWaveform isActive={true} variant="ai" />
             )}
-            {aiState === "thinking" && (
+            {aiState === 'thinking' && (
               <span className="text-sm text-muted-foreground animate-pulse">
                 Thinking...
               </span>
             )}
-            {aiState === "listening" && (
+            {aiState === 'listening' && isConnected && (
               <span className="text-sm text-primary font-medium">
                 Listening...
+              </span>
+            )}
+            {aiState === 'idle' && !isConnected && (
+              <span className="text-sm text-muted-foreground">
+                Tap the mic to start
               </span>
             )}
           </div>
@@ -181,22 +123,20 @@ export default function ConversationPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          {messages.length === 0 && !isConnected && (
+            <div className="text-center text-muted-foreground py-8">
+              <p>Tap the microphone button below to start your conversation.</p>
+            </div>
+          )}
+          
           {messages.map((message) => (
             <TranscriptBubble
               key={message.id}
               text={message.text}
               sender={message.sender}
-              isComplete={message.sender === "user"}
+              isComplete={true}
             />
           ))}
-          
-          {/* Live transcription */}
-          {currentTranscript && (
-            <div className="max-w-[85%] ml-auto rounded-2xl rounded-br-md px-4 py-3 bg-primary/80 text-primary-foreground">
-              <p className="text-sm">{currentTranscript}</p>
-              <AudioWaveform isActive={isListening} variant="user" className="mt-2" />
-            </div>
-          )}
           
           <div ref={messagesEndRef} />
         </div>
@@ -204,13 +144,31 @@ export default function ConversationPage() {
         {/* Voice Controls */}
         <div className="p-6 bg-card border-t border-border">
           <div className="flex flex-col items-center gap-4">
-            <VoiceButton
-              isListening={isListening}
-              onStart={handleStartListening}
-              onStop={handleStopListening}
-            />
+            {!isConnected ? (
+              <button
+                onClick={handleStartConversation}
+                disabled={isStarting}
+                className="w-20 h-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isStarting ? (
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                ) : (
+                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z" />
+                  </svg>
+                )}
+              </button>
+            ) : (
+              <VoiceButton
+                isListening={aiState === 'listening'}
+                onStart={() => {}}
+                onStop={handleStopConversation}
+              />
+            )}
             
-            <QuickActions onPause={handlePause} onIssue={handleIssue} />
+            {isConnected && (
+              <QuickActions onPause={handlePause} onIssue={handleIssue} />
+            )}
           </div>
         </div>
       </main>
