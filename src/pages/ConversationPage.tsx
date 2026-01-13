@@ -15,14 +15,18 @@ export default function ConversationPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(15);
   const [isStarting, setIsStarting] = useState(false);
+  const [partialAIResponse, setPartialAIResponse] = useState('');
 
   const {
     messages,
     isConnected,
     aiState,
+    currentTranscript,
     connect,
     disconnect,
-  } = useRealtimeChat();
+  } = useRealtimeChat({
+    onTranscriptUpdate: (transcript) => setPartialAIResponse(transcript),
+  });
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -137,6 +141,26 @@ export default function ConversationPage() {
               isComplete={true}
             />
           ))}
+          
+          {/* Show real-time user transcription */}
+          {currentTranscript && (
+            <TranscriptBubble
+              text={currentTranscript}
+              sender="user"
+              isComplete={false}
+              className="opacity-70"
+            />
+          )}
+          
+          {/* Show partial AI response as it streams */}
+          {partialAIResponse && aiState === 'speaking' && (
+            <TranscriptBubble
+              text={partialAIResponse}
+              sender="ai"
+              isComplete={false}
+              className="opacity-70"
+            />
+          )}
           
           <div ref={messagesEndRef} />
         </div>

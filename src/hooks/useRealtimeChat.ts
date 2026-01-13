@@ -183,6 +183,17 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
         }
         break;
 
+      case 'conversation.item.input_audio_transcription.failed':
+        console.error('Transcription failed:', event.error);
+        if (event.error?.message?.includes('429') || event.error?.code === 'rate_limit_exceeded') {
+          toast({
+            title: 'Transcription Unavailable',
+            description: 'Voice transcription temporarily unavailable due to rate limits.',
+            variant: 'destructive',
+          });
+        }
+        break;
+
       case 'response.audio_transcript.delta':
         partialTranscriptRef.current += event.delta || '';
         options.onTranscriptUpdate?.(partialTranscriptRef.current);
@@ -200,16 +211,54 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
         break;
 
       case 'response.done':
+        // Check for failed response due to quota
+        if (event.response?.status === 'failed') {
+          const error = event.response.status_details?.error;
+          if (error?.code === 'insufficient_quota') {
+            toast({
+              title: 'Quota Exceeded',
+              description: 'The AI service has reached its usage limit. Please add credits to your OpenAI account.',
+              variant: 'destructive',
+            });
+          } else if (error?.code === 'rate_limit_exceeded') {
+            toast({
+              title: 'Rate Limited',
+              description: 'Too many requests. Please wait a moment and try again.',
+              variant: 'destructive',
+            });
+          } else {
+            toast({
+              title: 'Response Failed',
+              description: error?.message || 'Failed to generate response',
+              variant: 'destructive',
+            });
+          }
+        }
         updateAIState('listening');
         break;
 
       case 'error':
         console.error('OpenAI error:', event.error);
-        toast({
-          title: 'Error',
-          description: event.error?.message || 'An error occurred',
-          variant: 'destructive',
-        });
+        const errorCode = event.error?.code;
+        if (errorCode === 'insufficient_quota') {
+          toast({
+            title: 'Quota Exceeded',
+            description: 'The AI service has reached its usage limit. Please add credits to your OpenAI account.',
+            variant: 'destructive',
+          });
+        } else if (errorCode === 'rate_limit_exceeded') {
+          toast({
+            title: 'Rate Limited',
+            description: 'Too many requests. Please wait a moment and try again.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: event.error?.message || 'An error occurred',
+            variant: 'destructive',
+          });
+        }
         break;
     }
   }, [updateAIState, addMessage, options, toast]);
