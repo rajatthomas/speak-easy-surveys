@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import oyosLogo from "@/assets/oyos-logo.png";
 
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -109,10 +110,7 @@ export default function AuthPage() {
       {/* Header */}
       <header className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gradient-hero flex items-center justify-center">
-            <MessageCircle className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-semibold text-foreground">OYOS</span>
+          <img src={oyosLogo} alt="OYOS" className="h-8 w-auto" />
         </div>
       </header>
 
