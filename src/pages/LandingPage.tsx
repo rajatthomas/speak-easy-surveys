@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Mic, ChevronRight, Clock, MessageCircle, Shield, LogOut, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import oyosLogo from "@/assets/oyos-logo.png";
+
 export default function LandingPage() {
   const navigate = useNavigate();
   const {
@@ -18,10 +20,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gradient-hero flex items-center justify-center">
-            <MessageCircle className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-semibold text-foreground">OYOS</span>
+          <img src={oyosLogo} alt="OYOS" className="h-8 w-auto" />
         </div>
 
         {/* Auth Controls */}
