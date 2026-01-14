@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AIAvatar } from "@/components/AIAvatar";
 import { VoiceButton } from "@/components/VoiceButton";
@@ -9,13 +9,41 @@ import { QuickActions } from "@/components/QuickActions";
 import { PrivacyBadge } from "@/components/PrivacyBadge";
 import { ArrowLeft, MoreVertical, Loader2 } from "lucide-react";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
+import { useSession } from "@/hooks/useSession";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ConversationPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(15);
   const [isStarting, setIsStarting] = useState(false);
   const [partialAIResponse, setPartialAIResponse] = useState('');
+  const hasInitializedSession = useRef(false);
+
+  const { 
+    currentSession, 
+    startSession, 
+    endSession, 
+    saveMessage,
+    getUserSessions,
+  } = useSession();
+
+  const [totalSessions, setTotalSessions] = useState(1);
+
+  // Fetch total sessions count
+  useEffect(() => {
+    if (user) {
+      getUserSessions().then(sessions => {
+        setTotalSessions(Math.max(sessions.length, 1));
+      });
+    }
+  }, [user, getUserSessions]);
+
+  const handleMessageAdded = useCallback((text: string, sender: 'user' | 'ai') => {
+    // Save message to database
+    saveMessage(text, sender);
+  }, [saveMessage]);
 
   const {
     messages,
@@ -26,6 +54,7 @@ export default function ConversationPage() {
     disconnect,
   } = useRealtimeChat({
     onTranscriptUpdate: (transcript) => setPartialAIResponse(transcript),
+    onMessageAdded: handleMessageAdded,
   });
 
   // Scroll to bottom when messages change
@@ -42,23 +71,46 @@ export default function ConversationPage() {
   const handleStartConversation = async () => {
     setIsStarting(true);
     try {
+      // Start a new session if we haven't already
+      if (!currentSession && !hasInitializedSession.current) {
+        hasInitializedSession.current = true;
+        await startSession();
+      }
       await connect();
     } finally {
       setIsStarting(false);
     }
   };
 
-  const handleStopConversation = () => {
+  const handleStopConversation = async () => {
     disconnect();
+    if (currentSession) {
+      await endSession('completed');
+      // Navigate to completion with session ID
+      navigate(`/complete?session=${currentSession.id}`);
+    } else {
+      navigate('/complete');
+    }
   };
 
-  const handlePause = () => {
+  const handlePause = async () => {
     disconnect();
+    if (currentSession) {
+      await endSession('paused');
+    }
     navigate("/paused");
   };
 
   const handleIssue = () => {
     alert("Options:\n• I can't hear you\n• You're not understanding me\n• Privacy concern\n\nPlease try again or contact support.");
+  };
+
+  const handleBack = async () => {
+    disconnect();
+    if (currentSession) {
+      await endSession('paused');
+    }
+    navigate("/");
   };
 
   // Map aiState to avatar state
@@ -69,18 +121,15 @@ export default function ConversationPage() {
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b border-border bg-card">
         <button
-          onClick={() => {
-            disconnect();
-            navigate("/");
-          }}
+          onClick={handleBack}
           className="p-2 rounded-full hover:bg-muted transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </button>
         
         <ProgressIndicator
-          currentSession={1}
-          totalSessions={3}
+          currentSession={totalSessions}
+          totalSessions={totalSessions}
           progress={progress}
           className="flex-1 max-w-xs mx-4"
         />

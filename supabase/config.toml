@@ -1,1 +1,7 @@
 project_id = "upiwgkyupivdrvhtjbrm"
+
+[functions.realtime-session]
+verify_jwt = false
+
+[functions.generate-session-summary]
+verify_jwt = false
