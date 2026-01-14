@@ -27,7 +27,7 @@ export function TranscriptBubble({
       <p className="text-sm leading-relaxed">{text}</p>
       {sender === "user" && isComplete && (
         <div className="flex justify-end mt-1">
-          <Check className="w-4 h-4 opacity-70" />
+          <Check className="w-4 h-4 text-orange-500" />
         </div>
       )}
     </div>
