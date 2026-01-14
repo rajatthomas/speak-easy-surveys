@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Check, Star, X, Clock, MessageSquare, Target, Loader2 } from "lucide-react";
+import { Check, Star, Clock, MessageSquare, Target, Loader2, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession, SessionData } from "@/hooks/useSession";
 import { useAuth } from "@/hooks/useAuth";
-
+import { useExportTranscript } from "@/hooks/useExportTranscript";
+import { useToast } from "@/hooks/use-toast";
 const feedbackOptions = [
   "This felt natural and easy",
   "This was too long",
@@ -17,8 +18,11 @@ export default function CompletionPage() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session');
   const { user } = useAuth();
-  const { getSession, getUserSessions, generateSummary } = useSession();
-
+  const { getSession, getUserSessions, generateSummary, getSessionMessages } = useSession();
+  const { exportAsText, exportAsPDF } = useExportTranscript();
+  const { toast } = useToast();
+  const [messages, setMessages] = useState<Array<{ id: string; content: string; sender: string; created_at: string }>>([]);
+  const [exporting, setExporting] = useState(false);
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [selectedFeedback, setSelectedFeedback] = useState<string[]>([]);
@@ -45,6 +49,10 @@ export default function CompletionPage() {
           const session = await getSession(sessionId);
           setSessionData(session);
 
+          // Fetch messages for export
+          const sessionMessages = await getSessionMessages(sessionId);
+          setMessages(sessionMessages);
+
           // Generate summary if not already generated
           if (session && !session.summary) {
             setGeneratingSummary(true);
@@ -63,7 +71,47 @@ export default function CompletionPage() {
     };
 
     fetchData();
-  }, [user, sessionId, getSession, getUserSessions, generateSummary]);
+  }, [user, sessionId, getSession, getUserSessions, generateSummary, getSessionMessages]);
+
+  const handleExportPDF = async () => {
+    if (!sessionData) return;
+    setExporting(true);
+    try {
+      exportAsPDF(sessionData, messages);
+      toast({
+        title: "Export Complete",
+        description: "Your transcript has been downloaded as PDF.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export transcript. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportText = async () => {
+    if (!sessionData) return;
+    setExporting(true);
+    try {
+      exportAsText(sessionData, messages);
+      toast({
+        title: "Export Complete",
+        description: "Your transcript has been downloaded as text file.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export transcript. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleFeedbackToggle = (option: string) => {
     setSelectedFeedback((prev) =>
@@ -201,6 +249,43 @@ export default function CompletionPage() {
                     {topic}
                   </span>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Export Buttons */}
+          {messages.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground mb-3">Export Transcript</p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportPDF}
+                  disabled={exporting}
+                  className="flex-1"
+                >
+                  {exporting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportText}
+                  disabled={exporting}
+                  className="flex-1"
+                >
+                  {exporting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-2" />
+                  )}
+                  Text
+                </Button>
               </div>
             </div>
           )}
