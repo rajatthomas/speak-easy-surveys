@@ -1,7 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Check, Star, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Check, Star, X, Clock, MessageSquare, Target, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSession, SessionData } from "@/hooks/useSession";
+import { useAuth } from "@/hooks/useAuth";
 
 const feedbackOptions = [
   "This felt natural and easy",
@@ -12,9 +14,56 @@ const feedbackOptions = [
 
 export default function CompletionPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('session');
+  const { user } = useAuth();
+  const { getSession, getUserSessions, generateSummary } = useSession();
+
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [selectedFeedback, setSelectedFeedback] = useState<string[]>([]);
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [totalSessions, setTotalSessions] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
+
+  // Fetch session data and generate summary
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch all user sessions for count
+        const sessions = await getUserSessions();
+        setTotalSessions(sessions.length);
+
+        // Fetch specific session if ID provided
+        if (sessionId) {
+          const session = await getSession(sessionId);
+          setSessionData(session);
+
+          // Generate summary if not already generated
+          if (session && !session.summary) {
+            setGeneratingSummary(true);
+            await generateSummary(sessionId);
+            // Refetch session to get updated data
+            const updatedSession = await getSession(sessionId);
+            setSessionData(updatedSession);
+            setGeneratingSummary(false);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch session data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user, sessionId, getSession, getUserSessions, generateSummary]);
 
   const handleFeedbackToggle = (option: string) => {
     setSelectedFeedback((prev) =>
@@ -28,10 +77,25 @@ export default function CompletionPage() {
     navigate("/");
   };
 
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return "—";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs}s`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-start p-6 overflow-y-auto">
       {/* Success Icon */}
-      <div className="relative mb-8">
+      <div className="relative mb-8 mt-8">
         <div className="w-24 h-24 rounded-full bg-success/10 flex items-center justify-center animate-fade-in">
           <div className="w-16 h-16 rounded-full gradient-hero flex items-center justify-center shadow-glow">
             <Check className="w-8 h-8 text-white" />
@@ -60,14 +124,88 @@ export default function CompletionPage() {
       </h1>
 
       {/* Message */}
-      <p className="text-muted-foreground text-center max-w-sm mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+      <p className="text-muted-foreground text-center max-w-sm mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
         Thank you for sharing openly and honestly. Your insights will help
         improve our workplace for everyone.
       </p>
 
-      <p className="text-sm text-muted-foreground text-center mb-10 animate-fade-in" style={{ animationDelay: "0.15s" }}>
-        Your responses have been sent anonymously to the leadership team.
-      </p>
+      {/* Session Metrics */}
+      {sessionData && (
+        <div 
+          className="w-full max-w-md bg-card rounded-2xl p-6 shadow-lg border border-border mb-6 animate-slide-up"
+          style={{ animationDelay: "0.15s" }}
+        >
+          <h2 className="text-lg font-semibold text-foreground mb-4">
+            Session Summary
+          </h2>
+
+          {/* Metrics Row */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl">
+              <Clock className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-xs text-muted-foreground">Duration</p>
+                <p className="font-semibold text-foreground">{formatDuration(sessionData.duration_seconds)}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-xs text-muted-foreground">Total Sessions</p>
+                <p className="font-semibold text-foreground">{totalSessions}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Summary */}
+          {generatingSummary ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Generating summary...</span>
+            </div>
+          ) : sessionData.summary ? (
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground mb-2">What we discussed:</p>
+              <p className="text-foreground">{sessionData.summary}</p>
+            </div>
+          ) : null}
+
+          {/* Goals */}
+          {sessionData.main_goals && sessionData.main_goals.length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                <p className="text-sm text-muted-foreground">Main Goals</p>
+              </div>
+              <ul className="space-y-1">
+                {sessionData.main_goals.map((goal, i) => (
+                  <li key={i} className="text-sm text-foreground flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    {goal}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Topics */}
+          {sessionData.topics_discussed && sessionData.topics_discussed.length > 0 && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Topics Covered</p>
+              <div className="flex flex-wrap gap-2">
+                {sessionData.topics_discussed.map((topic, i) => (
+                  <span 
+                    key={i}
+                    className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full"
+                  >
+                    {topic}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Feedback Card */}
       <div 

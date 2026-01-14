@@ -14,6 +14,7 @@ export type AIState = 'idle' | 'listening' | 'speaking' | 'thinking' | 'connecti
 interface UseRealtimeChatOptions {
   onTranscriptUpdate?: (transcript: string) => void;
   onAIStateChange?: (state: AIState) => void;
+  onMessageAdded?: (text: string, sender: 'user' | 'ai') => void;
 }
 
 export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
@@ -42,8 +43,12 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, message]);
+    
+    // Notify parent about new message for persistence
+    options.onMessageAdded?.(text, sender);
+    
     return message;
-  }, []);
+  }, [options]);
 
   const connect = useCallback(async () => {
     try {
@@ -103,7 +108,8 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
         updateAIState('listening');
         
         // Send initial greeting after connection
-        addMessage("Hi! I'm your AI conversation partner for this feedback session. Before we start, a few quick things: You can speak naturally like we're having coffee. If you need a break, just say \"pause\" and I'll remember where we left off. Your responses are private and anonymous. Sound good?", 'ai');
+        const greeting = "Hi! I'm your AI conversation partner for this feedback session. Before we start, a few quick things: You can speak naturally like we're having coffee. If you need a break, just say \"pause\" and I'll remember where we left off. Your responses are private and anonymous. Sound good?";
+        addMessage(greeting, 'ai');
       });
 
       dcRef.current.addEventListener('message', (e) => {
