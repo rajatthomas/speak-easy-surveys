@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import oyosLogo from "@/assets/oyos-logo.png";
 import { format, formatDistanceToNow } from "date-fns";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface ExtendedSessionData extends SessionData {
   rating?: number | null;
@@ -143,7 +144,7 @@ export default function DashboardPage() {
           <img src={oyosLogo} alt="OYOS" className="h-8 w-auto" />
         </div>
         <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
-        <div className="w-20" /> {/* Spacer for centering */}
+        <ThemeToggle />
       </header>
 
       <main className="max-w-4xl mx-auto p-6 space-y-6">
