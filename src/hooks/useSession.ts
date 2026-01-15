@@ -14,6 +14,8 @@ export interface SessionData {
   main_goals: string[] | null;
   topics_discussed: string[] | null;
   created_at: string;
+  rating?: number | null;
+  feedback?: string[] | null;
 }
 
 export function useSession() {
@@ -210,6 +212,27 @@ export function useSession() {
     }
   }, [getSession]);
 
+  const updateSessionRating = useCallback(async (sessionId: string, rating: number, feedback: string[]) => {
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .update({ rating, feedback })
+        .eq('id', sessionId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Failed to update session rating:', error);
+        return null;
+      }
+
+      return data as SessionData;
+    } catch (error) {
+      console.error('Update session rating error:', error);
+      return null;
+    }
+  }, []);
+
   return {
     currentSession,
     loading,
@@ -221,5 +244,6 @@ export function useSession() {
     getSession,
     generateSummary,
     setCurrentSession,
+    updateSessionRating,
   };
 }

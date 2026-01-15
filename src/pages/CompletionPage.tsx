@@ -18,9 +18,10 @@ export default function CompletionPage() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session');
   const { user } = useAuth();
-  const { getSession, getUserSessions, generateSummary, getSessionMessages } = useSession();
+  const { getSession, getUserSessions, generateSummary, getSessionMessages, updateSessionRating } = useSession();
   const { exportAsText, exportAsPDF } = useExportTranscript();
   const { toast } = useToast();
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [messages, setMessages] = useState<Array<{ id: string; content: string; sender: string; created_at: string }>>([]);
   const [exporting, setExporting] = useState(false);
   const [rating, setRating] = useState<number>(0);
@@ -123,6 +124,27 @@ export default function CompletionPage() {
 
   const handleClose = () => {
     navigate("/");
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!sessionId) return;
+    setSubmittingFeedback(true);
+    try {
+      await updateSessionRating(sessionId, rating, selectedFeedback);
+      toast({
+        title: "Feedback Submitted",
+        description: "Thank you for your feedback!",
+      });
+      navigate("/dashboard");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit feedback. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingFeedback(false);
+    }
   };
 
   const formatDuration = (seconds: number | null) => {
@@ -348,9 +370,17 @@ export default function CompletionPage() {
         {(rating > 0 || selectedFeedback.length > 0) && (
           <Button
             className="w-full gradient-hero text-white"
-            onClick={handleClose}
+            onClick={handleSubmitFeedback}
+            disabled={submittingFeedback}
           >
-            Submit Feedback
+            {submittingFeedback ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Feedback"
+            )}
           </Button>
         )}
       </div>

@@ -2,7 +2,7 @@ import { AIAvatar } from "@/components/AIAvatar";
 import { PrivacyBadge } from "@/components/PrivacyBadge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Mic, ChevronRight, Clock, MessageCircle, Shield, LogOut, User } from "lucide-react";
+import { Mic, ChevronRight, Clock, MessageCircle, Shield, LogOut, User, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import oyosLogo from "@/assets/oyos-logo.png";
 
@@ -26,6 +26,10 @@ export default function LandingPage() {
         {/* Auth Controls */}
         <div className="flex items-center gap-2">
           {user ? <>
+              <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="gap-2">
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </Button>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">{user.email}</span>

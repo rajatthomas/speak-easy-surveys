@@ -10,6 +10,7 @@ import AuthPage from "./pages/AuthPage";
 import ConversationPage from "./pages/ConversationPage";
 import CompletionPage from "./pages/CompletionPage";
 import PausedPage from "./pages/PausedPage";
+import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <PausedPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
                 </ProtectedRoute>
               } 
             />

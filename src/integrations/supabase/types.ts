@@ -75,8 +75,10 @@ export type Database = {
           created_at: string
           duration_seconds: number | null
           ended_at: string | null
+          feedback: string[] | null
           id: string
           main_goals: string[] | null
+          rating: number | null
           started_at: string
           status: string
           summary: string | null
@@ -87,8 +89,10 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           ended_at?: string | null
+          feedback?: string[] | null
           id?: string
           main_goals?: string[] | null
+          rating?: number | null
           started_at?: string
           status?: string
           summary?: string | null
@@ -99,8 +103,10 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           ended_at?: string | null
+          feedback?: string[] | null
           id?: string
           main_goals?: string[] | null
+          rating?: number | null
           started_at?: string
           status?: string
           summary?: string | null
