@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSession, SessionData } from "@/hooks/useSession";
@@ -245,9 +245,8 @@ export default function DashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {sessions.map((session) => (
-                    <>
+                    <React.Fragment key={session.id}>
                       <TableRow 
-                        key={session.id}
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => setExpandedSession(
                           expandedSession === session.id ? null : session.id
@@ -338,7 +337,7 @@ export default function DashboardPage() {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>
