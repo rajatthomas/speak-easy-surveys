@@ -167,6 +167,11 @@
   .glass-dark {
     @apply bg-black/40 backdrop-blur-xl;
   }
+
+  .logo-glow {
+    filter: drop-shadow(0 0 8px hsl(172 66% 50% / 0.6)) 
+            drop-shadow(0 0 20px hsl(172 66% 50% / 0.4));
+  }
 }
 
 /* Breathing animation for AI avatar */
