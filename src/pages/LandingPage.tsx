@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Mic, ChevronRight, Clock, MessageCircle, Shield, LogOut, User, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "next-themes";
 import oyosLogo from "@/assets/oyos-logo.png";
+import oyosLogoDark from "@/assets/oyos-logo-dark.png";
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const {
     user,
     signOut,
@@ -21,7 +24,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2">
-          <img src={oyosLogo} alt="OYOS" className="h-8 w-auto dark:logo-glow transition-all duration-300" />
+          <img src={theme === "dark" ? oyosLogoDark : oyosLogo} alt="OYOS" className="h-8 w-auto dark:logo-glow transition-all duration-300" />
         </div>
 
         {/* Auth Controls */}

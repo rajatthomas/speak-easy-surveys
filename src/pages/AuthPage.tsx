@@ -6,14 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "next-themes";
 import { z } from "zod";
 import oyosLogo from "@/assets/oyos-logo.png";
+import oyosLogoDark from "@/assets/oyos-logo-dark.png";
 
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const { user, signIn, signUp, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
@@ -110,7 +113,7 @@ export default function AuthPage() {
       {/* Header */}
       <header className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2">
-          <img src={oyosLogo} alt="OYOS" className="h-8 w-auto" />
+          <img src={theme === "dark" ? oyosLogoDark : oyosLogo} alt="OYOS" className="h-8 w-auto dark:logo-glow transition-all duration-300" />
         </div>
       </header>
 

@@ -24,8 +24,10 @@ import {
   ChevronUp,
 } from "lucide-react";
 import oyosLogo from "@/assets/oyos-logo.png";
+import oyosLogoDark from "@/assets/oyos-logo-dark.png";
 import { format, formatDistanceToNow } from "date-fns";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "next-themes";
 
 interface ExtendedSessionData extends SessionData {
   rating?: number | null;
@@ -34,6 +36,7 @@ interface ExtendedSessionData extends SessionData {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const { user } = useAuth();
   const { getUserSessions } = useSession();
   const [sessions, setSessions] = useState<ExtendedSessionData[]>([]);
@@ -141,7 +144,7 @@ export default function DashboardPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <img src={oyosLogo} alt="OYOS" className="h-8 w-auto" />
+          <img src={theme === "dark" ? oyosLogoDark : oyosLogo} alt="OYOS" className="h-8 w-auto dark:logo-glow transition-all duration-300" />
         </div>
         <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
         <ThemeToggle />
