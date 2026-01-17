@@ -24,6 +24,8 @@ export function useSession() {
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(false);
   const sessionStartTimeRef = useRef<Date | null>(null);
+  // Use a ref to always have access to the latest session ID
+  const currentSessionIdRef = useRef<string | null>(null);
 
   const startSession = useCallback(async () => {
     if (!user) {
@@ -55,6 +57,7 @@ export function useSession() {
       }
 
       setCurrentSession(data);
+      currentSessionIdRef.current = data.id;
       return data as SessionData;
     } catch (error) {
       console.error('Session creation error:', error);
@@ -65,7 +68,8 @@ export function useSession() {
   }, [user, toast]);
 
   const endSession = useCallback(async (status: 'completed' | 'paused' = 'completed') => {
-    if (!currentSession) return null;
+    const sessionId = currentSessionIdRef.current;
+    if (!sessionId) return null;
 
     const endTime = new Date();
     const durationSeconds = sessionStartTimeRef.current 
@@ -80,7 +84,7 @@ export function useSession() {
           ended_at: endTime.toISOString(),
           duration_seconds: durationSeconds,
         })
-        .eq('id', currentSession.id)
+        .eq('id', sessionId)
         .select()
         .single();
 
@@ -98,7 +102,9 @@ export function useSession() {
   }, [currentSession]);
 
   const saveMessage = useCallback(async (content: string, sender: 'user' | 'ai') => {
-    if (!currentSession) {
+    // Use the ref to get the latest session ID, avoiding stale closure issues
+    const sessionId = currentSessionIdRef.current;
+    if (!sessionId) {
       console.error('No active session to save message to');
       return null;
     }
@@ -107,7 +113,7 @@ export function useSession() {
       const { data, error } = await supabase
         .from('messages')
         .insert({
-          session_id: currentSession.id,
+          session_id: sessionId,
           sender,
           content,
         })
@@ -124,7 +130,7 @@ export function useSession() {
       console.error('Message save error:', error);
       return null;
     }
-  }, [currentSession]);
+  }, []);
 
   const getSessionMessages = useCallback(async (sessionId: string) => {
     try {

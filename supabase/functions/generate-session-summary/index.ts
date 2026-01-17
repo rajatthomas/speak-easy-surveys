@@ -43,9 +43,31 @@ serve(async (req) => {
     }
 
     if (!messages || messages.length === 0) {
+      // No messages found - update session with a default summary and return success
+      console.log('No messages found for session, creating default summary:', sessionId);
+      
+      const defaultSummary = "Session completed. No conversation transcript was recorded.";
+      const { error: updateError } = await supabase
+        .from('sessions')
+        .update({
+          summary: defaultSummary,
+          main_goals: [],
+          topics_discussed: [],
+        })
+        .eq('id', sessionId);
+
+      if (updateError) {
+        console.error('Failed to update session with default summary:', updateError);
+      }
+
       return new Response(
-        JSON.stringify({ error: 'No messages found for session' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: true, 
+          summary: defaultSummary,
+          main_goals: [],
+          topics_discussed: [],
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
