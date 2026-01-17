@@ -11,7 +11,12 @@ import AuthPage from "./pages/AuthPage";
 import ConversationPage from "./pages/ConversationPage";
 import CompletionPage from "./pages/CompletionPage";
 import PausedPage from "./pages/PausedPage";
+import DashboardLayout from "./components/dashboard/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
+import GoalsPage from "./pages/GoalsPage";
+import DISCProfilePage from "./pages/DISCProfilePage";
+import SessionsPage from "./pages/SessionsPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,14 +56,21 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              <Route 
-                path="/dashboard" 
+              {/* Dashboard with sidebar layout */}
+              <Route
+                path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <DashboardPage />
+                    <DashboardLayout />
                   </ProtectedRoute>
-                } 
-              />
+                }
+              >
+                <Route index element={<DashboardPage />} />
+                <Route path="goals" element={<GoalsPage />} />
+                <Route path="profile" element={<DISCProfilePage />} />
+                <Route path="sessions" element={<SessionsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

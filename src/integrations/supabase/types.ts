@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      disc_profiles: {
+        Row: {
+          compliance: number
+          created_at: string
+          dominance: number
+          id: string
+          influence: number
+          key_traits: string[] | null
+          recommendations: string[] | null
+          steadiness: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          compliance?: number
+          created_at?: string
+          dominance?: number
+          id?: string
+          influence?: number
+          key_traits?: string[] | null
+          recommendations?: string[] | null
+          steadiness?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          compliance?: number
+          created_at?: string
+          dominance?: number
+          id?: string
+          influence?: number
+          key_traits?: string[] | null
+          recommendations?: string[] | null
+          steadiness?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          created_at: string
+          discussed_at: string | null
+          id: string
+          status: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          discussed_at?: string | null
+          id?: string
+          status?: string
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          discussed_at?: string | null
+          id?: string
+          status?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -52,6 +121,8 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          name: string | null
+          role: string | null
           updated_at: string
         }
         Insert: {
@@ -59,6 +130,8 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
+          name?: string | null
+          role?: string | null
           updated_at?: string
         }
         Update: {
@@ -66,6 +139,8 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          name?: string | null
+          role?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -122,6 +197,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          dark_mode: boolean
+          data_sharing: boolean
+          email_notifications: boolean
+          id: string
+          push_notifications: boolean
+          session_reminders: boolean
+          updated_at: string
+          user_id: string
+          voice_coaching: boolean
+        }
+        Insert: {
+          created_at?: string
+          dark_mode?: boolean
+          data_sharing?: boolean
+          email_notifications?: boolean
+          id?: string
+          push_notifications?: boolean
+          session_reminders?: boolean
+          updated_at?: string
+          user_id: string
+          voice_coaching?: boolean
+        }
+        Update: {
+          created_at?: string
+          dark_mode?: boolean
+          data_sharing?: boolean
+          email_notifications?: boolean
+          id?: string
+          push_notifications?: boolean
+          session_reminders?: boolean
+          updated_at?: string
+          user_id?: string
+          voice_coaching?: boolean
+        }
+        Relationships: []
       }
     }
     Views: {
