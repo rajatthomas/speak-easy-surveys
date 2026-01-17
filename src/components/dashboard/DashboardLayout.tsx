@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
@@ -11,6 +12,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,6 +31,7 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const { theme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -93,6 +96,22 @@ export default function DashboardLayout() {
               {!collapsed && <span>{item.title}</span>}
             </button>
           ))}
+          
+          {/* Admin link - only visible to admins */}
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/admin')}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                location.pathname === '/admin'
+                  ? "bg-sidebar-accent text-sidebar-primary"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+              )}
+            >
+              <Shield className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && <span>Admin</span>}
+            </button>
+          )}
         </nav>
 
         {/* Sign Out */}
