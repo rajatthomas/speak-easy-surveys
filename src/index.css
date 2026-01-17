@@ -6,120 +6,125 @@
 
 @layer base {
   :root {
-    /* Oxford Blue + Cinnabar color palette */
-    --background: 40 33% 98%;
-    --foreground: 222 47% 11%;
+    /* OYOS Brand Colors: Oxford Blue, Cinnabar, Ash Gray, Cambridge Blue */
+    --background: 143 16% 97%;
+    --foreground: 226 50% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 226 50% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 226 50% 11%;
 
     /* Oxford Blue primary */
-    --primary: 222 47% 20%;
+    --primary: 226 50% 11%;
     --primary-foreground: 0 0% 100%;
 
-    /* Soft oxford blue tints */
-    --secondary: 222 25% 94%;
-    --secondary-foreground: 222 47% 15%;
+    /* Ash Gray secondary */
+    --secondary: 143 16% 92%;
+    --secondary-foreground: 226 50% 15%;
 
-    /* Muted cream tones */
-    --muted: 222 20% 96%;
-    --muted-foreground: 222 20% 40%;
+    /* Ash Gray muted */
+    --muted: 143 16% 94%;
+    --muted-foreground: 226 30% 40%;
 
     /* Cinnabar accent */
-    --accent: 15 74% 54%;
+    --accent: 14 66% 54%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 20% 88%;
-    --input: 222 20% 88%;
-    --ring: 222 47% 20%;
+    --border: 143 16% 85%;
+    --input: 143 16% 85%;
+    --ring: 226 50% 11%;
 
     --radius: 1rem;
 
     /* Custom tokens for OYOS */
-    --success: 142 71% 45%;
+    --success: 144 15% 55%;
     --success-foreground: 0 0% 100%;
     
     --surface-elevated: 0 0% 100%;
-    --surface-sunken: 222 25% 96%;
+    --surface-sunken: 143 16% 94%;
     
     /* Voice interface specific */
-    --voice-active: 222 47% 20%;
-    --voice-listening: 15 74% 54%;
-    --voice-pulse: 222 40% 35%;
+    --voice-active: 226 50% 11%;
+    --voice-listening: 14 66% 54%;
+    --voice-pulse: 144 15% 55%;
     
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 20%) 0%, hsl(222 40% 12%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(15 74% 54%) 0%, hsl(25 80% 50%) 100%);
-    --gradient-surface: linear-gradient(180deg, hsl(40 33% 98%) 0%, hsl(222 25% 96%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(226 50% 11%) 0%, hsl(226 50% 8%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(14 66% 54%) 0%, hsl(14 70% 48%) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(143 16% 97%) 0%, hsl(143 16% 92%) 100%);
     
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.08), 0 2px 4px -1px hsl(222 47% 11% / 0.04);
-    --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.1), 0 4px 6px -2px hsl(222 47% 11% / 0.05);
-    --shadow-glow: 0 0 40px hsl(222 47% 20% / 0.3);
-    --shadow-accent-glow: 0 0 30px hsl(15 74% 54% / 0.4);
+    --shadow-sm: 0 1px 2px 0 hsl(226 50% 11% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(226 50% 11% / 0.08), 0 2px 4px -1px hsl(226 50% 11% / 0.04);
+    --shadow-lg: 0 10px 15px -3px hsl(226 50% 11% / 0.1), 0 4px 6px -2px hsl(226 50% 11% / 0.05);
+    --shadow-glow: 0 0 40px hsl(226 50% 11% / 0.3);
+    --shadow-accent-glow: 0 0 30px hsl(14 66% 54% / 0.4);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 222 47% 20%;
+    --sidebar-background: 143 16% 97%;
+    --sidebar-foreground: 226 50% 11%;
+    --sidebar-primary: 226 50% 11%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 25% 94%;
-    --sidebar-accent-foreground: 222 47% 15%;
-    --sidebar-border: 222 20% 88%;
-    --sidebar-ring: 222 47% 20%;
+    --sidebar-accent: 143 16% 92%;
+    --sidebar-accent-foreground: 226 50% 15%;
+    --sidebar-border: 143 16% 85%;
+    --sidebar-ring: 226 50% 11%;
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 40 20% 95%;
+    --background: 226 50% 6%;
+    --foreground: 143 16% 95%;
 
-    --card: 222 40% 9%;
-    --card-foreground: 40 20% 95%;
+    --card: 226 45% 9%;
+    --card-foreground: 143 16% 95%;
 
-    --popover: 222 40% 9%;
-    --popover-foreground: 40 20% 95%;
+    --popover: 226 45% 9%;
+    --popover-foreground: 143 16% 95%;
 
-    /* Teal-tinged primary for dark mode (matching screenshot) */
-    --primary: 172 66% 50%;
-    --primary-foreground: 222 47% 6%;
+    /* Cambridge Blue primary for dark mode */
+    --primary: 144 15% 55%;
+    --primary-foreground: 226 50% 6%;
 
-    --secondary: 222 30% 14%;
-    --secondary-foreground: 40 20% 90%;
+    --secondary: 226 35% 14%;
+    --secondary-foreground: 143 16% 90%;
 
-    --muted: 222 30% 12%;
-    --muted-foreground: 222 15% 55%;
+    --muted: 226 35% 12%;
+    --muted-foreground: 143 16% 60%;
 
     /* Cinnabar accent for dark mode */
-    --accent: 15 74% 54%;
+    --accent: 14 66% 54%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 30% 16%;
-    --input: 222 30% 16%;
-    --ring: 172 66% 50%;
+    --border: 226 35% 16%;
+    --input: 226 35% 16%;
+    --ring: 144 15% 55%;
 
-    --surface-elevated: 222 40% 10%;
-    --surface-sunken: 222 47% 4%;
+    --surface-elevated: 226 45% 10%;
+    --surface-sunken: 226 50% 4%;
     
-    --shadow-glow: 0 0 40px hsl(172 66% 50% / 0.15);
-    --shadow-accent-glow: 0 0 30px hsl(15 74% 54% / 0.4);
+    /* Voice interface specific - dark mode */
+    --voice-active: 144 15% 55%;
+    --voice-listening: 14 66% 54%;
+    --voice-pulse: 144 15% 45%;
+    
+    --shadow-glow: 0 0 40px hsl(144 15% 55% / 0.15);
+    --shadow-accent-glow: 0 0 30px hsl(14 66% 54% / 0.4);
 
-    --sidebar-background: 222 47% 7%;
-    --sidebar-foreground: 40 20% 95%;
-    --sidebar-primary: 172 66% 50%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 30% 14%;
-    --sidebar-accent-foreground: 40 20% 90%;
-    --sidebar-border: 222 30% 16%;
-    --sidebar-ring: 172 66% 50%;
+    --sidebar-background: 226 50% 7%;
+    --sidebar-foreground: 143 16% 95%;
+    --sidebar-primary: 144 15% 55%;
+    --sidebar-primary-foreground: 226 50% 6%;
+    --sidebar-accent: 226 35% 14%;
+    --sidebar-accent-foreground: 143 16% 90%;
+    --sidebar-border: 226 35% 16%;
+    --sidebar-ring: 144 15% 55%;
   }
 }
 
@@ -169,8 +174,8 @@
   }
 
   .logo-glow {
-    filter: drop-shadow(0 0 8px hsl(172 66% 50% / 0.6)) 
-            drop-shadow(0 0 20px hsl(172 66% 50% / 0.4));
+    filter: drop-shadow(0 0 8px hsl(144 15% 55% / 0.6)) 
+            drop-shadow(0 0 20px hsl(144 15% 55% / 0.4));
   }
 }
 
