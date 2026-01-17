@@ -63,6 +63,12 @@ export default {
           elevated: "hsl(var(--surface-elevated))",
           sunken: "hsl(var(--surface-sunken))",
         },
+        brand: {
+          oxford: "hsl(226 50% 11%)",
+          cinnabar: "hsl(14 66% 54%)",
+          ash: "hsl(143 16% 75%)",
+          cambridge: "hsl(144 15% 55%)",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
