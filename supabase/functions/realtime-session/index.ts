@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
@@ -6,21 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not set');
-    }
-
-    const { instructions, voice = 'alloy' } = await req.json();
-
-    const systemPrompt = instructions || `You are a warm, empathetic AI coach conducting an employee feedback survey. Your role is to:
+const DEFAULT_PROMPT = `You are a warm, empathetic AI coach conducting an employee feedback survey. Your role is to:
 
 1. Create a safe, comfortable space for honest conversation
 2. Ask thoughtful follow-up questions to understand experiences deeply
@@ -38,6 +25,45 @@ Key topics to explore:
 - Workplace culture and values alignment
 
 Remember: This is a confidential, anonymous conversation. Encourage openness and honesty. If someone says "pause", acknowledge it warmly and let them know you'll be here when they're ready to continue.`;
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not set');
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Create admin client to fetch active prompt
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Fetch the active system prompt from the database
+    let systemPrompt = DEFAULT_PROMPT;
+    try {
+      const { data: promptData, error: promptError } = await supabaseAdmin
+        .from('system_prompts')
+        .select('prompt_text')
+        .eq('is_active', true)
+        .single();
+
+      if (!promptError && promptData?.prompt_text) {
+        systemPrompt = promptData.prompt_text;
+        console.log('Using custom system prompt from database');
+      } else {
+        console.log('No active prompt found, using default');
+      }
+    } catch (e) {
+      console.log('Error fetching prompt, using default:', e);
+    }
+
+    const { voice = 'alloy' } = await req.json();
 
     console.log("Creating ephemeral session with voice:", voice);
 

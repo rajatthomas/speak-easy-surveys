@@ -17,6 +17,7 @@ import GoalsPage from "./pages/GoalsPage";
 import DISCProfilePage from "./pages/DISCProfilePage";
 import SessionsPage from "./pages/SessionsPage";
 import SettingsPage from "./pages/SettingsPage";
+import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,15 @@ const App = () => (
                 <Route path="sessions" element={<SessionsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
+              {/* Admin route - requires admin role */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <AdminPage />
+                  </ProtectedRoute>
+                }
+              />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
