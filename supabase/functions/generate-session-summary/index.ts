@@ -13,6 +13,38 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate the user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Create user client to validate token
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error('Auth error:', claimsError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    console.log('Authenticated user:', userId);
+
     const { sessionId } = await req.json();
 
     if (!sessionId) {
@@ -22,10 +54,31 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Create admin client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify the user owns this session
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('sessions')
+      .select('user_id')
+      .eq('id', sessionId)
+      .single();
+
+    if (sessionError || !sessionData) {
+      console.error('Session not found:', sessionError);
+      return new Response(
+        JSON.stringify({ error: 'Session not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (sessionData.user_id !== userId) {
+      console.error('User does not own this session');
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Fetch messages for the session
     const { data: messages, error: messagesError } = await supabase
