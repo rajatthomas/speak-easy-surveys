@@ -9,9 +9,9 @@ export interface VADCallbacks {
 export interface VADOptions {
   positiveSpeechThreshold?: number;
   negativeSpeechThreshold?: number;
-  minSpeechFrames?: number;
-  redemptionFrames?: number;
-  preSpeechPadFrames?: number;
+  minSpeechMs?: number;
+  redemptionMs?: number;
+  preSpeechPadMs?: number;
 }
 
 const BASE_ASSET_PATH = "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/";
@@ -24,9 +24,9 @@ export async function createVAD(cb: VADCallbacks, opts: VADOptions = {}) {
     onnxWASMBasePath: ONNX_WASM_PATH,
     positiveSpeechThreshold: opts.positiveSpeechThreshold ?? 0.5,
     negativeSpeechThreshold: opts.negativeSpeechThreshold ?? 0.35,
-    minSpeechFrames: opts.minSpeechFrames ?? 4,
-    redemptionFrames: opts.redemptionFrames ?? 24,
-    preSpeechPadFrames: opts.preSpeechPadFrames ?? 6,
+    minSpeechMs: opts.minSpeechMs ?? 250,
+    redemptionMs: opts.redemptionMs ?? 800,
+    preSpeechPadMs: opts.preSpeechPadMs ?? 200,
     onSpeechStart: () => cb.onSpeechStart?.(),
     onVADMisfire: () => cb.onVADMisfire?.(),
     onSpeechEnd: (audio: Float32Array) => {
