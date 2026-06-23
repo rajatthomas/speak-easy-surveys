@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Trash2, Check, Loader2, Users, MessageSquare, Star, Eye, Edit2, Plus, Power } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -72,27 +73,17 @@ export default function AdminPage() {
   const fetchAnalytics = async () => {
     setAnalyticsLoading(true);
     try {
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('user_id, rating');
-
-      if (sessionsError) throw sessionsError;
-
-      const uniqueUsers = new Set(sessionsData?.map(s => s.user_id) || []);
-      const totalSessions = sessionsData?.length || 0;
-      const ratedSessions = sessionsData?.filter(s => s.rating !== null) || [];
-      const avgRating = ratedSessions.length > 0
-        ? ratedSessions.reduce((sum, s) => sum + (s.rating || 0), 0) / ratedSessions.length
-        : 0;
-
+      const { data, error } = await supabase.rpc('get_admin_analytics');
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
       setAnalytics({
-        totalUsers: uniqueUsers.size,
-        totalSessions,
-        avgRating: Math.round(avgRating * 10) / 10,
-        ratedSessions: ratedSessions.length,
+        totalUsers: Number(row?.total_users ?? 0),
+        totalSessions: Number(row?.total_sessions ?? 0),
+        avgRating: Number(row?.avg_rating ?? 0),
+        ratedSessions: Number(row?.rated_sessions ?? 0),
       });
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      logger.error('Error fetching analytics:', error);
       toast({
         title: 'Error',
         description: 'Failed to load analytics',
@@ -113,7 +104,7 @@ export default function AdminPage() {
       if (error) throw error;
       setPrompts(data || []);
     } catch (error) {
-      console.error('Error fetching prompts:', error);
+      logger.error('Error fetching prompts:', error);
       toast({
         title: 'Error',
         description: 'Failed to load system prompts',
@@ -189,7 +180,7 @@ export default function AdminPage() {
       await fetchPrompts();
       handleNew(); // Clear form
     } catch (error) {
-      console.error('Error saving prompt:', error);
+      logger.error('Error saving prompt:', error);
       toast({
         title: 'Error',
         description: 'Failed to save prompt',
@@ -216,7 +207,7 @@ export default function AdminPage() {
         handleNew();
       }
     } catch (error) {
-      console.error('Error deleting prompt:', error);
+      logger.error('Error deleting prompt:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete prompt',
@@ -244,7 +235,7 @@ export default function AdminPage() {
       toast({ title: 'Success', description: 'Active prompt updated' });
       await fetchPrompts();
     } catch (error) {
-      console.error('Error setting active prompt:', error);
+      logger.error('Error setting active prompt:', error);
       toast({
         title: 'Error',
         description: 'Failed to set active prompt',

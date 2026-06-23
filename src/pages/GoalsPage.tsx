@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -40,7 +41,7 @@ export default function GoalsPage() {
           setStats({ skipped, remaining, discussed });
         }
       } catch (error) {
-        console.error("Failed to fetch goals:", error);
+        logger.error("Failed to fetch goals:", error);
       } finally {
         setLoading(false);
       }

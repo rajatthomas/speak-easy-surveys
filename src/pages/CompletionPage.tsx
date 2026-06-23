@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Check, Star, Clock, MessageSquare, Target, Loader2, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,7 @@ export default function CompletionPage() {
           }
         }
       } catch (error) {
-        console.error('Failed to fetch session data:', error);
+        logger.error('Failed to fetch session data:', error);
       } finally {
         setLoading(false);
       }
