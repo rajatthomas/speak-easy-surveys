@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { streamText, convertToModelMessages, type UIMessage } from "npm:ai@4.3.16";
+import { streamText } from "npm:ai@4.3.16";
 import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible@0.2.16";
 
 const corsHeaders = {
@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { messages }: { messages: UIMessage[] } = await req.json();
+    const { messages }: { messages: { role: "user" | "assistant" | "system"; content: string }[] } = await req.json();
     if (!Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Missing messages" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -68,10 +68,10 @@ Deno.serve(async (req) => {
     const result = streamText({
       model: provider("google/gemini-3-flash-preview"),
       system: systemPrompt,
-      messages: convertToModelMessages(messages),
+      messages,
     });
 
-    return result.toUIMessageStreamResponse({ headers: corsHeaders });
+    return result.toTextStreamResponse({ headers: corsHeaders });
   } catch (e) {
     console.error("coach error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
