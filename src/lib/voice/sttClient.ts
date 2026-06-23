@@ -4,15 +4,16 @@ const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 const STT_URL = `https://${PROJECT_ID}.functions.supabase.co/stt`;
 
 export async function transcribe(
-  wav: Blob,
+  audio: Blob,
   onDelta?: (partial: string) => void,
   signal?: AbortSignal,
+  filename = "speech.webm",
 ): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("Not authenticated");
 
   const form = new FormData();
-  form.append("file", wav, "speech.wav");
+  form.append("file", audio, filename);
 
   const res = await fetch(STT_URL, {
     method: "POST",
