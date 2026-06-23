@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { logger } from '@/lib/logger';
-import { createVAD, type VADInstance } from "@/lib/voice/vad";
+import { PushToTalkRecorder } from "@/lib/voice/recorder";
 import { transcribe } from "@/lib/voice/sttClient";
 import { streamCoach, type ChatMessage } from "@/lib/voice/coachClient";
 import { TTSPlayer } from "@/lib/voice/ttsPlayer";
@@ -9,8 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 export type VoiceState =
   | "idle"
   | "loading"
-  | "listening"
-  | "user_speaking"
+  | "ready"
+  | "recording"
   | "transcribing"
   | "thinking"
   | "speaking";
@@ -34,9 +34,8 @@ export function useVoiceConversation(opts: Options = {}) {
   const [interimUser, setInterimUser] = useState("");
   const [interimAI, setInterimAI] = useState("");
   const [active, setActive] = useState(false);
-  const [vadSpeaking, setVadSpeaking] = useState(false);
 
-  const vadRef = useRef<VADInstance | null>(null);
+  const recorderRef = useRef<PushToTalkRecorder>(new PushToTalkRecorder());
   const ttsRef = useRef<TTSPlayer>(new TTSPlayer());
   const coachAbortRef = useRef<AbortController | null>(null);
   const historyRef = useRef<ChatMessage[]>([]);
@@ -61,30 +60,8 @@ export function useVoiceConversation(opts: Options = {}) {
     setInterimAI("");
   }, []);
 
-  const resumeListening = useCallback(async () => {
-    if (!activeRef.current) return;
-    try {
-      await vadRef.current?.start();
-      if (activeRef.current) setState("listening");
-    } catch (e) {
-      logger.error("VAD resume failed:", e);
-      toast({
-        title: "Microphone error",
-        description: e instanceof Error ? e.message : "Could not restart listening",
-        variant: "destructive",
-      });
-      activeRef.current = false;
-      setActive(false);
-      setState("idle");
-    }
-  }, [toast]);
-
-  const pauseListening = useCallback(async () => {
-    try {
-      await vadRef.current?.pause();
-    } catch (e) {
-      logger.warn("VAD pause failed:", e);
-    }
+  const goReady = useCallback(() => {
+    if (activeRef.current) setState("ready");
   }, []);
 
   const speakAndResume = useCallback(async (text: string) => {
@@ -97,19 +74,17 @@ export function useVoiceConversation(opts: Options = {}) {
     } catch (e) {
       if ((e as Error).name !== "AbortError") logger.error("TTS error:", e);
     } finally {
-      await resumeListening();
+      goReady();
     }
-  }, [opts.voice, resumeListening]);
+  }, [opts.voice, goReady]);
 
-  const handleSpeechEnd = useCallback(async (wav: Blob) => {
+  const processRecording = useCallback(async (audio: Blob, filename: string) => {
     if (processingRef.current) return;
     processingRef.current = true;
-    setVadSpeaking(false);
-    await pauseListening();
     try {
       setState("transcribing");
-      logger.log("[voice] STT request, bytes=", wav.size);
-      const text = (await transcribe(wav, (p) => setInterimUser(p))).trim();
+      logger.log("[voice] STT request, bytes=", audio.size);
+      const text = (await transcribe(audio, (p) => setInterimUser(p), undefined, filename)).trim();
       setInterimUser("");
       logger.log("[voice] STT final=", JSON.stringify(text));
       if (!text) {
@@ -146,7 +121,7 @@ export function useVoiceConversation(opts: Options = {}) {
         throw e;
       }
       coachAbortRef.current = null;
-      if (!full.trim()) { await resumeListening(); return; }
+      if (!full.trim()) { goReady(); return; }
 
       addMessage(full, "ai");
       setInterimAI("");
@@ -158,47 +133,29 @@ export function useVoiceConversation(opts: Options = {}) {
         description: e instanceof Error ? e.message : "Something went wrong",
         variant: "destructive",
       });
-      await resumeListening();
+      goReady();
     } finally {
       processingRef.current = false;
     }
-  }, [addMessage, pauseListening, resumeListening, speakAndResume, toast]);
-
-  const handleSpeechStart = useCallback(() => {
-    // Barge-in: if AI is speaking or thinking, cancel it
-    if (coachAbortRef.current || ttsRef.current.isPlaying()) {
-      interrupt();
-    }
-    setVadSpeaking(true);
-    setState("user_speaking");
-  }, [interrupt]);
+  }, [addMessage, goReady, speakAndResume, toast]);
 
   const start = useCallback(async () => {
     if (activeRef.current) return;
     try {
       setState("loading");
-      const vad = await createVAD({
-        onSpeechStart: handleSpeechStart,
-        onSpeechEnd: handleSpeechEnd,
-        onVADMisfire: () => setVadSpeaking(false),
-      });
-      vadRef.current = vad;
-      await vad.start();
-      await vad.pause();
       activeRef.current = true;
       setActive(true);
 
-      // Optional opening greeting so the user hears the AI first.
       if (opts.greeting && historyRef.current.length === 0) {
         addMessage(opts.greeting, "ai");
         await speakAndResume(opts.greeting);
       } else {
-        await resumeListening();
+        goReady();
       }
     } catch (e) {
-      logger.error("VAD start failed:", e);
+      logger.error("Voice start failed:", e);
       toast({
-        title: "Microphone error",
+        title: "Voice error",
         description: e instanceof Error ? e.message : "Could not access microphone",
         variant: "destructive",
       });
@@ -206,24 +163,55 @@ export function useVoiceConversation(opts: Options = {}) {
       setActive(false);
       setState("idle");
     }
-  }, [handleSpeechStart, handleSpeechEnd, toast, opts.greeting, addMessage, speakAndResume, resumeListening]);
+  }, [toast, opts.greeting, addMessage, speakAndResume, goReady]);
+
+  const toggleTalk = useCallback(async () => {
+    if (!activeRef.current) return;
+    // While AI is speaking/thinking, treat tap as barge-in then start recording.
+    if (state === "speaking" || state === "thinking") {
+      interrupt();
+    }
+    if (recorderRef.current.isRecording()) {
+      // Stop & process
+      try {
+        const result = await recorderRef.current.stop();
+        if (!result) {
+          goReady();
+          return;
+        }
+        await processRecording(result.blob, result.filename);
+      } catch (e) {
+        logger.error("[voice] stop failed:", e);
+        goReady();
+      }
+    } else if (state === "ready" || state === "speaking" || state === "thinking") {
+      try {
+        await recorderRef.current.start();
+        setState("recording");
+      } catch (e) {
+        toast({
+          title: "Microphone error",
+          description: e instanceof Error ? e.message : "Could not access microphone",
+          variant: "destructive",
+        });
+        goReady();
+      }
+    }
+  }, [state, interrupt, processRecording, goReady, toast]);
 
   const stop = useCallback(() => {
     activeRef.current = false;
     interrupt();
-    vadRef.current?.pause();
-    vadRef.current?.destroy();
-    vadRef.current = null;
+    recorderRef.current.cancel();
     setActive(false);
-    setVadSpeaking(false);
     setState("idle");
   }, [interrupt]);
 
   useEffect(() => () => {
     activeRef.current = false;
-    vadRef.current?.destroy();
+    recorderRef.current.cancel();
     ttsRef.current.stop();
   }, []);
 
-  return { state, messages, interimUser, interimAI, active, vadSpeaking, start, stop, interrupt };
+  return { state, messages, interimUser, interimAI, active, start, stop, toggleTalk, interrupt };
 }
