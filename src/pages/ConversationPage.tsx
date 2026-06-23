@@ -6,7 +6,7 @@ import { TranscriptBubble } from "@/components/TranscriptBubble";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
 import { QuickActions } from "@/components/QuickActions";
 import { PrivacyBadge } from "@/components/PrivacyBadge";
-import { ArrowLeft, MoreVertical, Loader2, Mic, Square } from "lucide-react";
+import { ArrowLeft, MoreVertical, Loader2, Mic, Square, Phone } from "lucide-react";
 import { useVoiceConversation } from "@/hooks/useVoiceConversation";
 import { useSession } from "@/hooks/useSession";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,9 +46,9 @@ export default function ConversationPage() {
     interimUser,
     interimAI,
     active,
-    vadSpeaking,
     start,
     stop,
+    toggleTalk,
   } = useVoiceConversation({
     onMessageAdded: handleMessageAdded,
     greeting: "Hi — I'm here whenever you're ready. How's work been going lately?",
@@ -104,7 +104,7 @@ export default function ConversationPage() {
   const avatarState: 'idle' | 'listening' | 'speaking' | 'thinking' =
     state === 'speaking' ? 'speaking' :
     state === 'thinking' || state === 'transcribing' || state === 'loading' ? 'thinking' :
-    state === 'listening' || state === 'user_speaking' ? 'listening' : 'idle';
+    state === 'recording' ? 'listening' : 'idle';
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -154,12 +154,15 @@ export default function ConversationPage() {
                 Transcribing…
               </span>
             )}
-            {state === 'user_speaking' && (
-              <AudioWaveform isActive={true} variant="user" />
+            {state === 'recording' && (
+              <div className="flex items-center gap-2">
+                <AudioWaveform isActive={true} variant="user" />
+                <span className="text-sm text-destructive font-medium">Recording — tap to send</span>
+              </div>
             )}
-            {state === 'listening' && (
+            {state === 'ready' && (
               <span className="text-sm text-primary font-medium">
-                {vadSpeaking ? "I hear you…" : "Listening…"}
+                Tap the mic to talk
               </span>
             )}
             {state === 'idle' && !active && (
@@ -173,7 +176,7 @@ export default function ConversationPage() {
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
           {messages.length === 0 && !active && (
             <div className="text-center text-muted-foreground py-8">
-              <p>Tap the microphone to start. Just speak naturally — I'll know when you're done.</p>
+              <p>Tap the microphone to start. Tap once to talk, tap again when you're done.</p>
             </div>
           )}
           
@@ -214,6 +217,7 @@ export default function ConversationPage() {
                 onClick={handleStartConversation}
                 disabled={state === 'loading'}
                 className="w-20 h-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Start conversation"
               >
                 {state === 'loading' ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
@@ -222,15 +226,36 @@ export default function ConversationPage() {
                 )}
               </button>
             ) : (
-              <button
-                onClick={handleStopConversation}
-                className="w-20 h-20 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-lg hover:bg-destructive/90 transition-all"
-                aria-label="End conversation"
-              >
-                <Square className="w-8 h-8" />
-              </button>
+              <div className="flex items-center gap-6">
+                <button
+                  onClick={toggleTalk}
+                  disabled={state === 'transcribing' || state === 'loading'}
+                  className={
+                    "w-24 h-24 rounded-full flex items-center justify-center shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed " +
+                    (state === 'recording'
+                      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 animate-pulse"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90")
+                  }
+                  aria-label={state === 'recording' ? "Stop and send" : "Tap to talk"}
+                >
+                  {state === 'transcribing' || state === 'loading' ? (
+                    <Loader2 className="w-9 h-9 animate-spin" />
+                  ) : state === 'recording' ? (
+                    <Square className="w-9 h-9" />
+                  ) : (
+                    <Mic className="w-9 h-9" />
+                  )}
+                </button>
+                <button
+                  onClick={handleStopConversation}
+                  className="w-14 h-14 rounded-full bg-muted text-muted-foreground flex items-center justify-center shadow hover:bg-muted/80 transition-all"
+                  aria-label="End conversation"
+                >
+                  <Phone className="w-6 h-6 rotate-[135deg]" />
+                </button>
+              </div>
             )}
-            
+
             {active && (
               <QuickActions onPause={handlePause} onIssue={handleIssue} />
             )}
