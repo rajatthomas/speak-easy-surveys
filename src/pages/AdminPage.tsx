@@ -72,24 +72,14 @@ export default function AdminPage() {
   const fetchAnalytics = async () => {
     setAnalyticsLoading(true);
     try {
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('user_id, rating');
-
-      if (sessionsError) throw sessionsError;
-
-      const uniqueUsers = new Set(sessionsData?.map(s => s.user_id) || []);
-      const totalSessions = sessionsData?.length || 0;
-      const ratedSessions = sessionsData?.filter(s => s.rating !== null) || [];
-      const avgRating = ratedSessions.length > 0
-        ? ratedSessions.reduce((sum, s) => sum + (s.rating || 0), 0) / ratedSessions.length
-        : 0;
-
+      const { data, error } = await supabase.rpc('get_admin_analytics');
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
       setAnalytics({
-        totalUsers: uniqueUsers.size,
-        totalSessions,
-        avgRating: Math.round(avgRating * 10) / 10,
-        ratedSessions: ratedSessions.length,
+        totalUsers: Number(row?.total_users ?? 0),
+        totalSessions: Number(row?.total_sessions ?? 0),
+        avgRating: Number(row?.avg_rating ?? 0),
+        ratedSessions: Number(row?.rated_sessions ?? 0),
       });
     } catch (error) {
       console.error('Error fetching analytics:', error);
