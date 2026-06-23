@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -29,7 +30,7 @@ export function useSession() {
 
   const startSession = useCallback(async () => {
     if (!user) {
-      console.error('No user found when trying to start session');
+      logger.error('No user found when trying to start session');
       return null;
     }
 
@@ -47,7 +48,7 @@ export function useSession() {
         .single();
 
       if (error) {
-        console.error('Failed to create session:', error);
+        logger.error('Failed to create session:', error);
         toast({
           title: 'Session Error',
           description: 'Failed to start session. Your conversation will not be saved.',
@@ -60,7 +61,7 @@ export function useSession() {
       currentSessionIdRef.current = data.id;
       return data as SessionData;
     } catch (error) {
-      console.error('Session creation error:', error);
+      logger.error('Session creation error:', error);
       return null;
     } finally {
       setLoading(false);
@@ -89,14 +90,14 @@ export function useSession() {
         .single();
 
       if (error) {
-        console.error('Failed to end session:', error);
+        logger.error('Failed to end session:', error);
         return null;
       }
 
       setCurrentSession(data);
       return data as SessionData;
     } catch (error) {
-      console.error('Session end error:', error);
+      logger.error('Session end error:', error);
       return null;
     }
   }, [currentSession]);
@@ -105,7 +106,7 @@ export function useSession() {
     // Use the ref to get the latest session ID, avoiding stale closure issues
     const sessionId = currentSessionIdRef.current;
     if (!sessionId) {
-      console.error('No active session to save message to');
+      logger.error('No active session to save message to');
       return null;
     }
 
@@ -121,13 +122,13 @@ export function useSession() {
         .single();
 
       if (error) {
-        console.error('Failed to save message:', error);
+        logger.error('Failed to save message:', error);
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Message save error:', error);
+      logger.error('Message save error:', error);
       return null;
     }
   }, []);
@@ -141,13 +142,13 @@ export function useSession() {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Failed to get messages:', error);
+        logger.error('Failed to get messages:', error);
         return [];
       }
 
       return data;
     } catch (error) {
-      console.error('Get messages error:', error);
+      logger.error('Get messages error:', error);
       return [];
     }
   }, []);
@@ -163,13 +164,13 @@ export function useSession() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Failed to get sessions:', error);
+        logger.error('Failed to get sessions:', error);
         return [];
       }
 
       return data as SessionData[];
     } catch (error) {
-      console.error('Get sessions error:', error);
+      logger.error('Get sessions error:', error);
       return [];
     }
   }, [user]);
@@ -183,13 +184,13 @@ export function useSession() {
         .single();
 
       if (error) {
-        console.error('Failed to get session:', error);
+        logger.error('Failed to get session:', error);
         return null;
       }
 
       return data as SessionData;
     } catch (error) {
-      console.error('Get session error:', error);
+      logger.error('Get session error:', error);
       return null;
     }
   }, []);
@@ -201,7 +202,7 @@ export function useSession() {
       });
 
       if (error) {
-        console.error('Failed to generate summary:', error);
+        logger.error('Failed to generate summary:', error);
         return null;
       }
 
@@ -213,7 +214,7 @@ export function useSession() {
 
       return data;
     } catch (error) {
-      console.error('Generate summary error:', error);
+      logger.error('Generate summary error:', error);
       return null;
     }
   }, [getSession]);
@@ -228,13 +229,13 @@ export function useSession() {
         .single();
 
       if (error) {
-        console.error('Failed to update session rating:', error);
+        logger.error('Failed to update session rating:', error);
         return null;
       }
 
       return data as SessionData;
     } catch (error) {
-      console.error('Update session rating error:', error);
+      logger.error('Update session rating error:', error);
       return null;
     }
   }, []);

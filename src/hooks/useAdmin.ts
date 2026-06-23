@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -21,13 +22,13 @@ export function useAdmin() {
       });
 
       if (error) {
-        console.error('Error checking admin status:', error);
+        logger.error('Error checking admin status:', error);
         setIsAdmin(false);
       } else {
         setIsAdmin(data?.isAdmin ?? false);
       }
     } catch (error) {
-      console.error('Failed to check admin status:', error);
+      logger.error('Failed to check admin status:', error);
       setIsAdmin(false);
     } finally {
       setLoading(false);

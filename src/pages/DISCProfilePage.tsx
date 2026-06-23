@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, CheckCircle2 } from "lucide-react";
@@ -41,7 +42,7 @@ export default function DISCProfilePage() {
           setProfile(data);
         }
       } catch (error) {
-        console.error("Failed to fetch DISC profile:", error);
+        logger.error("Failed to fetch DISC profile:", error);
       } finally {
         setLoading(false);
       }

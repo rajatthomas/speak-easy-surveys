@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { logger } from '@/lib/logger';
 import { createVAD, type VADInstance } from "@/lib/voice/vad";
 import { transcribe } from "@/lib/voice/sttClient";
 import { streamCoach, type ChatMessage } from "@/lib/voice/coachClient";
@@ -90,11 +91,11 @@ export function useVoiceConversation(opts: Options = {}) {
           setState("listening");
         });
       } catch (e) {
-        console.error("TTS error:", e);
+        logger.error("TTS error:", e);
         setState("listening");
       }
     } catch (e) {
-      console.error("Conversation turn failed:", e);
+      logger.error("Conversation turn failed:", e);
       toast({
         title: "Voice error",
         description: e instanceof Error ? e.message : "Something went wrong",
@@ -127,7 +128,7 @@ export function useVoiceConversation(opts: Options = {}) {
       setActive(true);
       setState("listening");
     } catch (e) {
-      console.error("VAD start failed:", e);
+      logger.error("VAD start failed:", e);
       toast({
         title: "Microphone error",
         description: e instanceof Error ? e.message : "Could not access microphone",

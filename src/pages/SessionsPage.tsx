@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -53,7 +54,7 @@ export default function SessionsPage() {
           }
         }
       } catch (error) {
-        console.error("Failed to fetch sessions:", error);
+        logger.error("Failed to fetch sessions:", error);
       } finally {
         setLoading(false);
       }

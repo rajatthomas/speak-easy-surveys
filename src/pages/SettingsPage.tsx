@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Pencil } from "lucide-react";
@@ -94,7 +95,7 @@ export default function SettingsPage() {
           });
         }
       } catch (error) {
-        console.error("Failed to fetch settings:", error);
+        logger.error("Failed to fetch settings:", error);
       } finally {
         setLoading(false);
       }
@@ -181,7 +182,7 @@ export default function SettingsPage() {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Failed to save preference:", error);
+      logger.error("Failed to save preference:", error);
       // Revert on error
       setPreferences(preferences);
     }

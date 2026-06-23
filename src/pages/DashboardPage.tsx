@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { logger } from '@/lib/logger';
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -62,7 +63,7 @@ export default function DashboardPage() {
           setGoals(goalsData);
         }
       } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
+        logger.error("Failed to fetch dashboard data:", error);
       } finally {
         setLoading(false);
       }
