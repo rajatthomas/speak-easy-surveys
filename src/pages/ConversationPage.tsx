@@ -46,9 +46,13 @@ export default function ConversationPage() {
     interimUser,
     interimAI,
     active,
+    vadSpeaking,
     start,
     stop,
-  } = useVoiceConversation({ onMessageAdded: handleMessageAdded });
+  } = useVoiceConversation({
+    onMessageAdded: handleMessageAdded,
+    greeting: "Hi — I'm here whenever you're ready. How's work been going lately?",
+  });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -155,7 +159,7 @@ export default function ConversationPage() {
             )}
             {state === 'listening' && (
               <span className="text-sm text-primary font-medium">
-                Listening…
+                {vadSpeaking ? "I hear you…" : "Listening…"}
               </span>
             )}
             {state === 'idle' && !active && (
