@@ -90,7 +90,6 @@ export function useVoiceConversation(opts: Options = {}) {
   const speakAndResume = useCallback(async (text: string) => {
     if (!activeRef.current) return;
     setState("speaking");
-    setInterimAI(text);
     try {
       logger.log("[voice] TTS speak start");
       await ttsRef.current.speak(text, opts.voice ?? "alloy");
@@ -98,7 +97,6 @@ export function useVoiceConversation(opts: Options = {}) {
     } catch (e) {
       if ((e as Error).name !== "AbortError") logger.error("TTS error:", e);
     } finally {
-      setInterimAI("");
       await resumeListening();
     }
   }, [opts.voice, resumeListening]);
