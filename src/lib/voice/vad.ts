@@ -26,9 +26,9 @@ export async function createVAD(cb: VADCallbacks, opts: VADOptions = {}) {
       onnxWASMBasePath: ONNX_WASM_PATH,
       positiveSpeechThreshold: opts.positiveSpeechThreshold ?? 0.35,
       negativeSpeechThreshold: opts.negativeSpeechThreshold ?? 0.25,
-      minSpeechFrames: 3,
-      redemptionFrames: 16, // ~512ms at 32ms/frame
-      preSpeechPadFrames: 6,
+      minSpeechMs: opts.minSpeechMs ?? 250,
+      redemptionMs: opts.redemptionMs ?? 500,
+      preSpeechPadMs: opts.preSpeechPadMs ?? 200,
       onSpeechStart: () => {
         logger.log("[VAD] speech start");
         cb.onSpeechStart?.();
