@@ -42,6 +42,7 @@ export function useVoiceConversation(opts: Options = {}) {
   const historyRef = useRef<ChatMessage[]>([]);
   const processingRef = useRef(false);
   const emptySttCountRef = useRef(0);
+  const activeRef = useRef(false);
 
   const addMessage = useCallback((text: string, sender: "user" | "ai") => {
     const msg: VoiceMessage = {
@@ -60,10 +61,51 @@ export function useVoiceConversation(opts: Options = {}) {
     setInterimAI("");
   }, []);
 
+  const resumeListening = useCallback(async () => {
+    if (!activeRef.current) return;
+    try {
+      await vadRef.current?.start();
+      if (activeRef.current) setState("listening");
+    } catch (e) {
+      logger.error("VAD resume failed:", e);
+      toast({
+        title: "Microphone error",
+        description: e instanceof Error ? e.message : "Could not restart listening",
+        variant: "destructive",
+      });
+      activeRef.current = false;
+      setActive(false);
+      setState("idle");
+    }
+  }, [toast]);
+
+  const pauseListening = useCallback(async () => {
+    try {
+      await vadRef.current?.pause();
+    } catch (e) {
+      logger.warn("VAD pause failed:", e);
+    }
+  }, []);
+
+  const speakAndResume = useCallback(async (text: string) => {
+    if (!activeRef.current) return;
+    setState("speaking");
+    try {
+      logger.log("[voice] TTS speak start");
+      await ttsRef.current.speak(text, opts.voice ?? "alloy");
+      logger.log("[voice] TTS playback done");
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") logger.error("TTS error:", e);
+    } finally {
+      await resumeListening();
+    }
+  }, [opts.voice, resumeListening]);
+
   const handleSpeechEnd = useCallback(async (wav: Blob) => {
     if (processingRef.current) return;
     processingRef.current = true;
     setVadSpeaking(false);
+    await pauseListening();
     try {
       setState("transcribing");
       logger.log("[voice] STT request, bytes=", wav.size);
@@ -72,6 +114,9 @@ export function useVoiceConversation(opts: Options = {}) {
       logger.log("[voice] STT final=", JSON.stringify(text));
       if (!text) {
         emptySttCountRef.current += 1;
+        const recovery = emptySttCountRef.current >= 2
+          ? "I'm hearing sound, but I can't make out the words clearly. Could you try again a little closer to the mic?"
+          : "Sorry, I couldn't make that out. Could you say that again?";
         if (emptySttCountRef.current >= 2) {
           toast({
             title: "I didn't catch that",
@@ -79,7 +124,7 @@ export function useVoiceConversation(opts: Options = {}) {
           });
           emptySttCountRef.current = 0;
         }
-        setState("listening");
+        await speakAndResume(recovery);
         return;
       }
       emptySttCountRef.current = 0;
@@ -101,21 +146,11 @@ export function useVoiceConversation(opts: Options = {}) {
         throw e;
       }
       coachAbortRef.current = null;
-      if (!full.trim()) { setState("listening"); return; }
+      if (!full.trim()) { await resumeListening(); return; }
 
       addMessage(full, "ai");
       setInterimAI("");
-      setState("speaking");
-      try {
-        logger.log("[voice] TTS speak start");
-        await ttsRef.current.speak(full, opts.voice ?? "alloy", () => {
-          logger.log("[voice] TTS playback done");
-          setState("listening");
-        });
-      } catch (e) {
-        logger.error("TTS error:", e);
-        setState("listening");
-      }
+      await speakAndResume(full);
     } catch (e) {
       logger.error("Conversation turn failed:", e);
       toast({
@@ -123,11 +158,11 @@ export function useVoiceConversation(opts: Options = {}) {
         description: e instanceof Error ? e.message : "Something went wrong",
         variant: "destructive",
       });
-      setState("listening");
+      await resumeListening();
     } finally {
       processingRef.current = false;
     }
-  }, [addMessage, opts.voice, toast]);
+  }, [addMessage, pauseListening, resumeListening, speakAndResume, toast]);
 
   const handleSpeechStart = useCallback(() => {
     // Barge-in: if AI is speaking or thinking, cancel it
@@ -139,7 +174,7 @@ export function useVoiceConversation(opts: Options = {}) {
   }, [interrupt]);
 
   const start = useCallback(async () => {
-    if (active) return;
+    if (activeRef.current) return;
     try {
       setState("loading");
       const vad = await createVAD({
@@ -148,23 +183,17 @@ export function useVoiceConversation(opts: Options = {}) {
         onVADMisfire: () => setVadSpeaking(false),
       });
       vadRef.current = vad;
-      vad.start();
+      await vad.start();
+      await vad.pause();
+      activeRef.current = true;
       setActive(true);
 
       // Optional opening greeting so the user hears the AI first.
       if (opts.greeting && historyRef.current.length === 0) {
         addMessage(opts.greeting, "ai");
-        setState("speaking");
-        try {
-          await ttsRef.current.speak(opts.greeting, opts.voice ?? "alloy", () => {
-            setState("listening");
-          });
-        } catch (e) {
-          logger.error("Greeting TTS failed:", e);
-          setState("listening");
-        }
+        await speakAndResume(opts.greeting);
       } else {
-        setState("listening");
+        await resumeListening();
       }
     } catch (e) {
       logger.error("VAD start failed:", e);
@@ -173,11 +202,14 @@ export function useVoiceConversation(opts: Options = {}) {
         description: e instanceof Error ? e.message : "Could not access microphone",
         variant: "destructive",
       });
+      activeRef.current = false;
+      setActive(false);
       setState("idle");
     }
-  }, [active, handleSpeechStart, handleSpeechEnd, toast, opts.greeting, opts.voice, addMessage]);
+  }, [handleSpeechStart, handleSpeechEnd, toast, opts.greeting, addMessage, speakAndResume, resumeListening]);
 
   const stop = useCallback(() => {
+    activeRef.current = false;
     interrupt();
     vadRef.current?.pause();
     vadRef.current?.destroy();
@@ -188,6 +220,7 @@ export function useVoiceConversation(opts: Options = {}) {
   }, [interrupt]);
 
   useEffect(() => () => {
+    activeRef.current = false;
     vadRef.current?.destroy();
     ttsRef.current.stop();
   }, []);

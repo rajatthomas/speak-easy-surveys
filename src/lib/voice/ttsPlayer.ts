@@ -72,17 +72,36 @@ export class TTSPlayer {
           } catch { /* ignore */ }
         }
       }
-      // schedule done callback after last chunk has played
-      if (onDone && this.ctx) {
-        const delay = Math.max(0, this.playhead - this.ctx.currentTime);
-        setTimeout(() => { if (this.abort === abort) onDone(); }, delay * 1000);
-      }
+      await this.waitForPlayback(abort);
+      if (!abort.signal.aborted && this.abort === abort) onDone?.();
     } catch (e) {
       if ((e as Error).name === "AbortError") return;
       throw e;
     } finally {
-      if (this.abort === abort) this.abort = null;
+      if (this.abort === abort) {
+        this.abort = null;
+        this.playhead = 0;
+        this.pending = new Uint8Array(0);
+      }
     }
+  }
+
+  private async waitForPlayback(abort: AbortController): Promise<void> {
+    if (!this.ctx) return;
+    const delayMs = Math.max(0, (this.playhead - this.ctx.currentTime) * 1000);
+    if (delayMs <= 0) return;
+
+    await new Promise<void>((resolve) => {
+      const timeout = window.setTimeout(resolve, delayMs);
+      abort.signal.addEventListener(
+        "abort",
+        () => {
+          window.clearTimeout(timeout);
+          resolve();
+        },
+        { once: true },
+      );
+    });
   }
 
   private base64ToBytes(b64: string): Uint8Array {
